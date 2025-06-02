@@ -70,7 +70,6 @@ def run_code_in_sandbox(code, png_filename):
                 }
                 
                 print(f"\n✅ 图片已成功从沙盒获取并保存为: {local_filename}")
-                print(f"图片大小: {len(image_data)} 字节")
                 
                 return True, local_filename, success_info
             else:
