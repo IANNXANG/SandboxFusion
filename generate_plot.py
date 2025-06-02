@@ -5,6 +5,11 @@ import requests
 import json
 import base64
 
+
+# 设置思考模式参数
+enable_thinking = False
+enable_thinking = True
+
 def run_code_in_sandbox(code, png_filename):
     """
     在沙盒中执行代码并下载生成的图片文件
@@ -41,11 +46,7 @@ def run_code_in_sandbox(code, png_filename):
             if 'files' in display_result:
                 display_files = {}
                 for filename, content in display_result['files'].items():
-                    if len(content) > 100:  # 如果内容过长
-                        # 显示前50个字符 + 省略标记 + 后50个字符
-                        display_files[filename] = content[:50] + "...[省略 " + str(len(content) - 100) + " 个字符]..." + content[-50:]
-                    else:
-                        display_files[filename] = content
+                        display_files[filename] = "base64 str"
                 display_result['files'] = display_files
             
             print(json.dumps(display_result, indent=2, ensure_ascii=False))
@@ -108,12 +109,9 @@ def run_code_in_sandbox(code, png_filename):
 # 配置OpenAI客户端连接到本地vllm服务
 client = openai.OpenAI(
     base_url="http://localhost:8001/v1",
-    api_key="dummy-key"  # vllm通常不需要真实的API key
+    api_key="dummy-key" 
 )
 
-# 设置思考模式参数
-#enable_thinking = True
-enable_thinking = False
 
 # 根据思考模式设置不同的参数
 if enable_thinking:
@@ -138,6 +136,7 @@ full_prompt = """
 2. 保存的PNG文件名需要放在<png>和</png>标签中
 3. 代码应该是完整可执行的
 4. 图片上所有文字都应该是英文
+5. 绘图美观，这是一个学术报告的插图
 
 示例格式：
 <code>
@@ -145,6 +144,7 @@ import matplotlib.pyplot as plt
 # 你的绘图代码
 plt.savefig('filename.png')
 </code>
+
 <png>filename.png</png>
 """
 
@@ -171,15 +171,19 @@ print("模型响应:")
 print(model_response)
 print("\n" + "="*50 + "\n")
 
-# 提取代码部分 - 只匹配最后出现的<code></code>
+# 提取代码部分 - 排除<think></think>标签内的内容，只匹配最后出现的<code></code>
+# 先移除<think></think>标签及其内容
+think_pattern = r'<think>.*?</think>'
+filtered_response = re.sub(think_pattern, '', model_response, flags=re.DOTALL)
+
 code_pattern = r'<code>(.*?)</code>'
-code_matches = re.findall(code_pattern, model_response, re.DOTALL)
+code_matches = re.findall(code_pattern, filtered_response, re.DOTALL)
 if code_matches:
     code_matches = [code_matches[-1]]  # 只保留最后一个匹配
 
-# 提取PNG文件名 - 只匹配最后出现的<png></png>
+# 提取PNG文件名 - 排除<think></think>标签内的内容，只匹配最后出现的<png></png>
 png_pattern = r'<png>(.*?)</png>'
-png_matches = re.findall(png_pattern, model_response, re.DOTALL)
+png_matches = re.findall(png_pattern, filtered_response, re.DOTALL)
 if png_matches:
     png_matches = [png_matches[-1]]  # 只保留最后一个匹配
 
