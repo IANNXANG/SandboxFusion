@@ -178,3 +178,5 @@ detect_cuda_version.cc
 debug/
 
 runtime/lean/.lake/
+
+*.png
