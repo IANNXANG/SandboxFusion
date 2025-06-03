@@ -277,7 +277,7 @@ plt.savefig('filename.png')
                 filtered_assistant_response = re.sub(think_pattern, '', accumulated_response, flags=re.DOTALL)
                 messages.append({"role": "assistant", "content": filtered_assistant_response})
                 messages.append({
-                    "role": "user", 
+                    "role": "tool", 
                     "content": f"""[工具执行结果]
 {tool_result}
 
