@@ -8,7 +8,7 @@ import base64
 
 # 设置思考模式参数
 enable_thinking = False
-enable_thinking = True
+#enable_thinking = True
 
 def run_code_in_sandbox(code, png_filename):
     """
@@ -126,9 +126,9 @@ else:
     top_k = 20
     min_p = 0.0
 
-# 构建prompt
-full_prompt = """
-请生成一段Python代码，使用matplotlib库创建一个正弦曲线并保存为PNG文件。
+# 构建system和user prompt
+system_prompt = """
+请生成一段Python代码。
 
 要求：
 1. 代码需要放在<code>和</code>标签中
@@ -147,12 +147,15 @@ plt.savefig('filename.png')
 <png>filename.png</png>
 """
 
+user_prompt = "使用matplotlib库创建一个正弦曲线并保存为PNG文件"
+
 
 # 调用模型
 response = client.chat.completions.create(
     model="8001vllm",
     messages=[
-        {"role": "user", "content": full_prompt}
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
     ],
     max_tokens=2000,
     temperature=temperature,
