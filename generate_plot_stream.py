@@ -124,12 +124,14 @@ if enable_thinking:
     top_p = 0.95
     top_k = 20
     min_p = 0.0
+    max_token = 20480
 else:
     # 非思考模式参数
     temperature = 0.7
     top_p = 0.8
     top_k = 20
     min_p = 0.0
+    max_token = 20480
 
 # 构建system和user prompt
 system_prompt = """
@@ -191,7 +193,7 @@ def stream_generate_with_tool_calling():
         stream = client.chat.completions.create(
             model="8001vllm",
             messages=messages,
-            max_tokens=2000,
+            max_tokens=max_token,
             temperature=temperature,
             top_p=top_p,
             stream=True,
@@ -252,8 +254,11 @@ def stream_generate_with_tool_calling():
                 else:
                     tool_result = json.dumps(result_info, indent=2, ensure_ascii=False)
                 
-                # 将助手的响应和工具调用结果添加到消息历史
-                messages.append({"role": "assistant", "content": accumulated_response})
+                # 将助手的响应添加到消息历史（过滤掉think标签内容）
+                # 过滤think标签内容
+                think_pattern = r'<think>.*?</think>'
+                filtered_assistant_response = re.sub(think_pattern, '', accumulated_response, flags=re.DOTALL)
+                messages.append({"role": "assistant", "content": filtered_assistant_response})
                 messages.append({
                     "role": "user", 
                     "content": f"""[工具执行结果]
@@ -276,19 +281,26 @@ def stream_generate_with_tool_calling():
             print("\n✅ 生成完成，未检测到新的</png>标签")
             break
     
-    return accumulated_response, messages
+    # 过滤最终响应中的think标签内容
+    think_pattern = r'<think>.*?</think>'
+    final_filtered_response = re.sub(think_pattern, '', accumulated_response, flags=re.DOTALL)
+    
+    # 将最终的助手响应添加到消息历史中
+    if final_filtered_response.strip():  # 只有当响应不为空时才添加
+        messages.append({"role": "assistant", "content": final_filtered_response})
+    
+    return  messages
 
 # 执行流式生成
-final_response, messages = stream_generate_with_tool_calling()
-print("\n🎯 最终响应:")
-print(final_response)
+messages = stream_generate_with_tool_calling()
 
-# 打印完整的消息历史
+# 打印完整的对话历史（包括最终响应）
 print("\n" + "="*60)
-print("📋 完整消息历史:")
+print("📋 完整对话历史:")
 print("="*60)
 for i, message in enumerate(messages):
     print(f"\n[消息 {i+1}] 角色: {message['role']}")
+    print(f"内容长度: {len(message['content'])} 字符")
     print("-" * 40)
     # 直接打印内容，不进行额外的转义处理
     print(message['content'])
