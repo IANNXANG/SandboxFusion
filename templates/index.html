@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字分析&图表生成DEMO powered by Qwen3-32B</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 文字分析&图表生成DEMO</h1>
+            <p>powered by Qwen3-32B</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-panel">
+                <div class="form-group">
+                    <label for="userPrompt">📝 用户提示词</label>
+                    <textarea id="userPrompt" placeholder="请输入您的图表生成需求，例如：\n\n使用matplotlib库创建一个正弦曲线并保存为PNG文件\n\n或者\n\n分析以下销售数据并生成可视化图表...">
+你是一名数据分析师，需要对以下一组销售数据进行分析并生成报告分析代码。数据涵盖了某公司过去 12 个月（2024 年 1 月 - 2024 年 12 月）的产品销售信息，具体字段及数据如下：
+
+月份	产品 A 销量（件）	产品 B 销量（件）	产品 A 销售额（元）	产品 B 销售额（元）	销售地区	客户满意度评分（满分 10 分）
+2024 年 1 月	120	80	12000	8000	华北	8.5
+2024 年 2 月	130	75	13500	7500	华北	8.2
+2024 年 3 月	150	90	15000	9000	华北	8.8
+2024 年 4 月	140	85	14000	8500	华东	9.0
+2024 年 5 月	160	95	16000	9500	华东	8.9
+2024 年 6 月	145	88	14500	8800	华东	9.2
+2024 年 7 月	135	78	13500	7800	华南	8.0
+2024 年 8 月	125	82	12500	8200	华南	8.3
+2024 年 9 月	142	92	14200	9200	华南	8.6
+2024 年 10 月	155	100	15500	10000	华中	9.5
+2024 年 11 月	165	105	16500	10500	华中	9.3
+2024 年 12 月	170	110	17000	11000	华中	9.6
+使用matplotlib库创建一个合适的图并保存为PNG文件</textarea>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="enableThinking" checked>
+                    <label for="enableThinking">🧠 启用思考模式</label>
+                </div>
+                
+                <button class="generate-btn" id="generateBtn">
+                    开始生成
+                </button>
+                
+                <div class="status" id="status">🟢 就绪</div>
+            </div>
+            
+            <div class="output-panel">
+                <div class="tabs">
+                    <button class="tab active" onclick="showTab('logs')">📋 执行日志</button>
+                    <button class="tab" onclick="showTab('images')">🖼️ 生成图片</button>
+                    <button class="tab" onclick="showTab('messages')">💬 对话历史</button>
+                </div>
+                
+                <div id="logsContent" class="tab-content active">
+                    <div id="logsContainer">
+                        <p style="text-align: center; color: #666; padding: 40px;">准备就绪，等待用户输入...</p>
+                    </div>
+                </div>
+                
+                <div id="imagesContent" class="tab-content">
+                    <div id="imagesContainer">
+                        <p style="text-align: center; color: #666; padding: 40px;">暂无生成的图片</p>
+                    </div>
+                </div>
+                
+                <div id="messagesContent" class="tab-content">
+                    <div id="messagesContainer">
+                        <p style="text-align: center; color: #666; padding: 40px;">暂无对话历史</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
