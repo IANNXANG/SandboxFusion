@@ -100,8 +100,10 @@ function addLogEntry(entry, index) {
         }
     }
     
-    // 自动滚动到底部
-    container.scrollTop = container.scrollHeight;
+    // 自动滚动到底部（使用requestAnimationFrame确保DOM更新后再滚动）
+    requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+    });
 }
 
 // 更新图片显示函数
@@ -180,6 +182,11 @@ function checkStatus() {
                 addLogEntry(data.logs[i], i);
             }
             
+            // 确保滚动到底部（在所有日志更新完成后）
+            requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+            });
+            
             // 更新图片
             updateImages(data.images);
             
@@ -212,11 +219,23 @@ function checkStatus() {
 function startGeneration() {
     if (isGenerating) return;
     
+    const systemPrompt = document.getElementById('systemPrompt').value.trim();
     const userPrompt = document.getElementById('userPrompt').value.trim();
     const enableThinking = document.getElementById('enableThinking').checked;
+    const maxNewToken = parseInt(document.getElementById('maxNewToken').value) || 8192;
     
     if (!userPrompt) {
         alert('请输入用户提示词');
+        return;
+    }
+    
+    if (!systemPrompt) {
+        alert('请输入系统提示词');
+        return;
+    }
+    
+    if (maxNewToken < 1 || maxNewToken > 32768) {
+        alert('最大新生成Token数必须在1-32768之间');
         return;
     }
     
@@ -233,8 +252,10 @@ function startGeneration() {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+            system_prompt: systemPrompt,
             user_prompt: userPrompt,
-            enable_thinking: enableThinking
+            enable_thinking: enableThinking,
+            max_new_token: maxNewToken
         })
     })
     .then(response => response.json())

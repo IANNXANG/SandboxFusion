@@ -84,7 +84,19 @@ textarea {
     background: white;
 }
 
-textarea:focus {
+input[type="number"] {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: border-color 0.3s;
+    background: white;
+}
+
+textarea:focus,
+input[type="number"]:focus {
     outline: none;
     border-color: #3498db;
 }

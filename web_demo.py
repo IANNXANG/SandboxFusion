@@ -9,6 +9,10 @@ import threading
 import time
 from datetime import datetime
 import uuid
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -33,7 +37,8 @@ def run_code_in_sandbox(code, png_filename):
         print("\n正在通过沙盒执行生成的代码...")
         
         # 发送请求到沙盒API
-        sandbox_response = requests.post('http://localhost:8080/run_code', json={
+        sandbox_url = os.getenv("SANDBOX_URL", "http://localhost:8080")
+        sandbox_response = requests.post(f'{sandbox_url}/run_code', json={
             'code': code,
             'language': 'python',
             'fetch_files': [png_filename]  # 指定要获取的图片文件
@@ -100,14 +105,14 @@ def run_code_in_sandbox(code, png_filename):
         
         return False, None, error_info
 
-def stream_generate_with_tool_calling(user_prompt, enable_thinking, session_id):
+def stream_generate_with_tool_calling(system_prompt, user_prompt, enable_thinking, max_new_token, session_id):
     """
     流式生成，当检测到</png>时停止生成并执行沙盒代码，然后继续生成
     """
     # 配置OpenAI客户端连接到本地vllm服务
     client = openai.OpenAI(
-        base_url="http://localhost:8001/v1",
-        api_key="dummy-key" 
+        base_url=os.getenv("OPENAI_BASE_URL", "http://localhost:8001/v1"),
+        api_key=os.getenv("OPENAI_API_KEY", "dummy-key")
     )
     
     # 根据思考模式设置不同的参数
@@ -117,36 +122,17 @@ def stream_generate_with_tool_calling(user_prompt, enable_thinking, session_id):
         top_p = 0.95
         top_k = 20
         min_p = 0.0
-        max_token = 20480
     else:
         # 非思考模式参数
         temperature = 0.7
         top_p = 0.8
         top_k = 20
         min_p = 0.0
-        max_token = 20480
     
-    # 构建system prompt
-    system_prompt = """
-请生成一段Python代码。
-
-要求：
-1. 代码需要放在<code>和</code>标签中
-2. 保存的PNG文件名需要放在<png>和</png>标签中
-3. 代码应该是完整可执行的
-4. 图片上所有文字都应该是英文
-5. 绘图美观，这是一个学术报告的插图
-
-示例格式：
-<code>
-import matplotlib.pyplot as plt
-# 你的绘图代码
-plt.savefig('filename.png')
-</code>
-
-<png>filename.png</png>
-"""
+    # 使用传入的max_new_token参数
+    max_token = max_new_token
     
+    # 使用传入的system_prompt参数
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
@@ -168,7 +154,7 @@ plt.savefig('filename.png')
         
         # 流式调用模型
         stream = client.chat.completions.create(
-            model="8001vllm",
+            model=os.getenv("OPENAI_MODEL_NAME", "8001vllm"),
             messages=messages,
             max_tokens=max_token,
             temperature=temperature,
@@ -331,11 +317,24 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.json
+    system_prompt = data.get('system_prompt', '')
     user_prompt = data.get('user_prompt', '')
     enable_thinking = data.get('enable_thinking', False)
+    max_new_token = data.get('max_new_token', 8192)
     
     if not user_prompt.strip():
         return jsonify({'error': '用户提示不能为空'}), 400
+    
+    if not system_prompt.strip():
+        return jsonify({'error': '系统提示不能为空'}), 400
+    
+    # 验证max_new_token范围
+    try:
+        max_new_token = int(max_new_token)
+        if max_new_token < 1 or max_new_token > 32768:
+            return jsonify({'error': '最大新生成Token数必须在1-32768之间'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': '最大新生成Token数必须是有效数字'}), 400
     
     # 生成会话ID
     session_id = str(uuid.uuid4())
@@ -353,7 +352,7 @@ def generate():
         try:
             # 更新状态为运行中
             sessions[session_id]['status'] = 'running'
-            stream_generate_with_tool_calling(user_prompt, enable_thinking, session_id)
+            stream_generate_with_tool_calling(system_prompt, user_prompt, enable_thinking, max_new_token, session_id)
         except Exception as e:
             if session_id in sessions:
                 sessions[session_id]['logs'].append({
