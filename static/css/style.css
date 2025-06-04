@@ -211,7 +211,7 @@ input[type="number"]:focus {
     border-radius: 6px;
     padding: 20px;
     min-height: 400px;
-    max-height: 400px;
+    max-height: 700px;
     overflow-y: auto;
     border: 1px solid #e0e0e0;
 }
